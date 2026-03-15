@@ -60,7 +60,7 @@ def init():
     for i in range(30):
         student = choice(students)
         course = choice(courses)
-        year = ["2023", "2024", "2025", "2026"]
+        year = ["2023", "2024"]
         semester = ["1", "2"]
         enrollments.append(Enrollment(student.student_id, course.course_id, choice(year)+choice(semester), f"{randint(0, 100)/10:.1f}"))
 # Print records
@@ -83,6 +83,8 @@ init()
 
 
 
+# I. Heap file vs Sequential file
+
 # Heap file implementation for student
 class StudentHeapFile:
     def __init__(self):
@@ -92,41 +94,25 @@ class StudentHeapFile:
         lookup_count = 0
         self.heap.append(record)
         return lookup_count
-    def search(self, student_id):
+    def random_search(self, student_id):
         lookup_count = 0
         for record in self.heap:
             lookup_count += 1
             if record.student_id == student_id:
                 return (record, lookup_count)
+    def sequential_search(self, start, end):
+        total_lookup_count = 0
+        records = []
+        for i in range(start, end+1):
+            record, lookup_count = self.random_search(i)
+            total_lookup_count += lookup_count
+            records.append(record)
+        return (total_lookup_count, records)
     def print(self):
         for record in self.heap:
             print(record)
-# Demo for student heap
-random_students = sample(students, k=len(students))
-heap = StudentHeapFile()
-def student_heap_insert(verbose=False):
-    total_lookup_count = 0
-    for student in random_students:
-        total_lookup_count += heap.insert(student)
-        verbose and print(f"Insert record {student} after {lookup_count} lookups")
-    return total_lookup_count
-def student_heap_search(id, verbose=False):
-    verbose and print(f"Search for student with id {id}:")
-    record, lookup_count = heap.search(id)
-    verbose and print(f"Found record {record} after {lookup_count} lookups")
-    return lookup_count
 
-print("---Heap File---")
-heap_insert_count = student_heap_insert()
-print(f"Total lookup while inserting: {heap_insert_count}")
-print("- Searching for id from 1 to 20...")
-heap_search_count = 0
-for i in range(1, 21):
-    heap_search_count += student_heap_search(i)
-print(f"Total lookup while searching: {heap_search_count}")
-
-
-
+# Sequential file implementation for student
 class StudentSequentialFile:
     def __init__(self):
         self.list = []
@@ -152,7 +138,7 @@ class StudentSequentialFile:
                     right = mid - 1
             self.list.insert(left, record)
         return lookup_count
-    def search(self, student_id):
+    def random_search(self, student_id):
         lookup_count = 0
         left = 0
         right = len(self.list)-1
@@ -161,35 +147,290 @@ class StudentSequentialFile:
             current = self.list[mid]
             lookup_count += 1
             if current.student_id == student_id:
-                return (current, lookup_count)
+                return (current, mid, lookup_count)
             elif current.student_id < student_id:
                 left = mid + 1
             else:
                 right = mid - 1
-        return (None, lookup_count)
+        return (None, 0, lookup_count)
+    def sequential_search(self, start, end):
+        record, index, lookup_count = self.random_search(start)
+        records = self.list[index:index+end-start+1]
+        return (lookup_count, records)
 
-sequential_list = StudentSequentialFile()
-def sequential_list_insert(verbose=False):
+
+# Randomize student records for insertion
+random_students = sample(students, k=len(students))
+
+# Demo for student heap file
+heapFile = StudentHeapFile()
+def student_heap_insert(verbose=False):
+    print("\n[HEAP FILE INSERT]\n")
+    print("# Insert randomized student records into heap file")
+    verbose and print("! VERBOSE OUTPUT")
     total_lookup_count = 0
     for student in random_students:
-        total_lookup_count += sequential_list.insert(student)
-        verbose and print(f"Insert record {student} after {lookup_count} lookups")
+        lookup_count =  heapFile.insert(student)
+        verbose and print(f"? Insert record {student} after {lookup_count} lookups")
+        total_lookup_count += lookup_count
     if verbose:
-        for student in sequential_list.list:
-            print(student)
-    return total_lookup_count
+        print("? Heap file content:")
+        for student in heapFile.heap:
+            print("- " + str(student))
+    print(f"! Finish inserting into heap after {total_lookup_count} lookups")
+def student_heap_random_search(count=5, verbose=False):
+    print("\n[HEAP RANDOM SEARCH]\n")
+    print(f"# Search for {count} random students:")
+    verbose and print("! VERBOSE OUTPUT")
+    random_search_id = sample(range(1, 21), k=count)
+    total_lookup_count = 0
+    records = []
+    for i in random_search_id:
+        record, lookup_count = heapFile.random_search(i)
+        verbose and print(f"? Found record {record} after {lookup_count} lookups")
+        total_lookup_count += lookup_count
+        records.append(record)
+    verbose and print(f"? Found records:\n- {'\n- '.join(str(i) for i in records)}")
+    print(f"! Finish search after {total_lookup_count} lookups")
+def student_heap_sequential_search(start=1, end=5, verbose=False):
+    print("\n[HEAP SEQUENTIAL SEARCH]\n")
+    print(f"# Search for students with id from {start} to {end}")
+    verbose and print("! VERBOSE OUTPUT")
+    total_lookup_count, records = heapFile.sequential_search(start, end)
+    verbose and print(f"? Found records:\n- {'\n- '.join(str(i) for i in records)}")
+    print(f"! Finish search after {total_lookup_count} lookups")
 
-def sequential_list_search(id, verbose=False):
-    verbose and print(f"Search for student with id {id}")
-    record, lookup_count = sequential_list.search(id)
-    verbose and print(f"Found record {record} after {lookup_count} lookups")
-    return lookup_count
+# Demo for student sequential file
+sequentialFile = StudentSequentialFile()
+def sequential_list_insert(verbose=False):
+    print("\n[SEQUENTIAL FILE INSERT]\n")
+    print("# Inserting random student records into sequential file")
+    verbose and print("! VERBOSE OUTPUT")
+    total_lookup_count = 0
+    for student in random_students:
+        lookup_count = sequentialFile.insert(student)
+        verbose and print(f"? Insert record {student} after {lookup_count} lookups")
+        total_lookup_count += lookup_count
+    if verbose:
+        print("? Sequential file content:")
+        for student in sequentialFile.list:
+            print("- " + str(student))
+    print(f"! Finish inserting after {total_lookup_count} lookups")
+def sequential_list_random_search(count=5, verbose=False):
+    print("\n[SEQUENTIAL FILE RANDOM SEARCH]\n")
+    print(f"# Search for {count} random students:")
+    verbose and print("! VERBOSE OUTPUT")
+    random_search_id = sample(range(1, 21), k=count)
+    total_lookup_count = 0
+    records = []
+    for i in random_search_id:
+        record, index, lookup_count = sequentialFile.random_search(i)
+        verbose and print(f"? Found record {record} at index {index} after {lookup_count} lookups")
+        total_lookup_count += lookup_count
+        records.append(record)
+    verbose and print(f"? Found records:\n- {'\n- '.join(str(i) for i in records)}")
+    print(f"! Found records after {total_lookup_count} lookups")
+def sequential_list_sequential_search(start=1, end=5, verbose=False):
+    print("\n[SEQUENTIAL FILE SEQUENTIAL SEARCH]\n")
+    print(f"# Search for students with id from {start} to {end}")
+    verbose and print("! VERBOSE OUTPUT")
+    total_lookup_count, records = sequentialFile.sequential_search(start, end)
+    verbose and print(f"? Found records:\n- {'\n- '.join(str(i) for i in records)}")
+    print(f"! Found records after {total_lookup_count} lookups")
 
-print("---Sequential File---")
-sequential_insert_count = sequential_list_insert()
-print(f"Total lookup count while inserting: {sequential_insert_count}")
-print("- Searching for id from 1 to 20...")
-sequential_search_count = 0
-for i in range(1, 21):
-    sequential_search_count += sequential_list_search(i)
-print(f"Total lookup while searching: {sequential_search_count}")
+# Heap file and sequential file demo run
+# print("---Heap File---")
+# student_heap_insert(verbose=True)
+# student_heap_random_search(verbose=True)
+# student_heap_sequential_search(verbose=True)
+# print("---Sequential File---")
+# sequential_list_insert(verbose=True)
+# sequential_list_random_search(verbose=True)
+# sequential_list_sequential_search(verbose=True)
+
+
+
+
+# II. Multitable Clustering and Partitioning 
+
+# Standard database with seperate Student and Enrollment tables using a heap file
+class StandardDatabase:
+    def __init__(self):
+        self.database = {
+            "students": [],
+            "enrollments": []
+        }
+    def insert(self, table, record):
+        if table not in self.database.keys():
+            raise ValueError("Invalid table!")
+        
+        self.database[table].append(record)
+    
+    def search(self, table, key, value):
+        if table not in self.database.keys():
+            raise ValueError("Invalid table!")
+        
+        if not hasattr(self.database[table][0], key):
+            raise ValueError("Invalid key!")
+        lookup_count = 0
+        records = []
+        for i in self.database[table]:
+            lookup_count += 1
+            if getattr(i, key) == value:
+                records.append(i)
+        return (records, lookup_count)
+    
+    def join(self, t1, t2, key, tableName=""):
+        if t1 not in self.database.keys() or t2 not in self.database.keys():
+            raise ValueError("Invalid tables!")
+        if not hasattr(self.database[t1][0], key) or not hasattr(self.database[t2][0], key):
+            raise ValueError("Invalid key!")
+        
+        tableName = t1 + "_" + t2 if tableName == "" else tableName
+        # Initiate tableName class
+        def joinInit(self, **kwargs):
+            for key, value in kwargs.items():
+                setattr(self, key, value)
+        def joinStr(self):
+            return f"[{str.upper(tableName)}|{'|'.join([str(i) for i in self.__dict__.values()])}]"
+        
+        joinClass = type(tableName, (object,), {
+            '__init__': joinInit,
+            '__str__': joinStr
+        })
+        # Helper dictionary to build joined tables
+        results = []
+        lookup_count = 0
+        helper = {}
+        for i in self.database[t1]:
+            lookup_count += 1
+            helper[getattr(i, key)] = i
+        
+        for i in self.database[t2]:
+            lookup_count += 1
+            match = helper.get(getattr(i, key))
+            if match:
+                results.append(joinClass(**{**match.__dict__, **i.__dict__}))
+        
+        self.database[tableName] = results
+        return lookup_count
+    
+
+
+standard_database = StandardDatabase()
+random_enrollments = sample(enrollments, k=len(enrollments))
+
+def standard_database_insert(verbose=False):
+    print("\n[STANDARD DATABASE INSERT]\n")
+    print("# Inserting randomized students and enrollments into the database")
+    for i in random_students:
+        standard_database.insert("students", i)
+    for i in random_enrollments:
+        standard_database.insert("enrollments", i)
+    if verbose:
+        print("? Standard database structure:")
+        print(f"? Students:\n- {'\n- '.join([str(i) for i in standard_database.database['students']])}")
+        print(f"? Enrollments:\n- {'\n- '.join([str(i) for i in standard_database.database['enrollments']])}")
+
+
+def standard_database_join(verbose=False):
+    print("\n[STANDARD DATABASE JOIN]\n")
+    print("# Joining database students and enrollments into studentEnroll table")
+    lookup_count = standard_database.join("students", "enrollments", "student_id", "studentEnroll")
+    if verbose:
+        print(f"? New table structure:\n- {'\n- '.join([str(i) for i in standard_database.database['studentEnroll']])}")
+    print(f"! Finish joining students and enrollments table after {lookup_count} lookup")
+
+def standard_database_search(verbose=False):
+    print("\n[STANDARD DATABASE SEARCH]\n")
+    print("# Searching for enrollments in 20231 semester")
+    records, lookup_count = standard_database.search("enrollments", "semester", "20231")
+    verbose and print(f"? Found records:\n- {'\n- '.join([str(i) for i in records])}")
+    print(f"! Found records after {lookup_count} lookups")
+print("--- Standard Database ---")
+standard_database_insert(verbose=True)
+standard_database_join(verbose=True)        
+standard_database_search(verbose=True)
+
+
+# Clustered database with table Student and Enrollment by student_id
+class ClusteredDatabase:
+    def __init__(self):
+        self.database = {}
+        self.tables = {
+            "students": Student,
+            "enrollments": Enrollment
+        }
+    
+    def insert(self, table, record):
+        if table not in self.tables.keys():
+            raise ValueError(f"Invalid table!")
+        if not isinstance(self.tables[table], record):
+            raise ValueError(f"Invalid record for table {table}!")
+        if not hasattr(record, 'student_id'):
+            raise ValueError(f"Record doesn't have student_id column!")
+        
+        if getattr(record, 'student_id') not in self.database:
+            self.database[getattr(record, 'student_id')] = [record]
+        else:
+            self.database[getattr(record, 'student_id')].append(record)
+    
+    def search(self, table, key, value):
+        if table not in self.tables.keys():
+            raise ValueError(f"Invalid table!")
+        if not hasattr(self.tables[table], key):
+            raise ValueError(f"Invalid key!")
+        lookup_count = 0
+        records = []
+        if key == 'student_id':
+            for i in self.database[value]:
+                lookup_count += 1
+                if isinstance(i, self.tables[table]):
+                    records.append(i)
+        else:
+            for i in self.database.values():
+                for j in i:
+                    lookup_count += 1
+                    if isinstance(j, self.tables[table]) and getattr(j, key) == value:
+                        records.append(j)
+        return (records, lookup_count)
+
+    def join(self, t1, t2, key, tableName=""):
+        if t1 not in self.tables.keys() or t2 not in self.tables.keys():
+            raise ValueError("Invalid tables!")
+        if not hasattr(self.tables[t1], key) or not hasattr(self.tables[t2], key):
+            raise ValueError("Invalid key!")
+        tableName = t1 + "_" + t2 if tableName == '' else tableName
+
+        # Create class for joined table
+        def joinInit(self, **kwargs):
+            for key, value in kwargs.values():
+                setattr(self, key, value)
+        def joinStr(self):
+            return f"[{str.upper(tableName)}|{'|'.join([str(i) for i in self.__dict__.values()])}]"
+        
+        joinClass = type(tableName, (object,), {
+            '__init__': joinInit,
+            '__str__': joinStr
+        })
+        lookup_count = 0
+        if key == 'student_id':
+            parent = None
+            for i in self.database.keys():
+                for j in self.database[i]:
+                    lookup_count += 1
+                    if isinstance(j, self.tables[t1]):
+                        parent = j
+                    elif isinstance(j, self.tables[t2]):
+                        self.database[i].append(joinClass(**{**parent.__dict__, **j.__dict__}))
+        else:
+            # Same as standard database, then put all the results into the database by student_id
+            pass
+    
+clustered_database = ClusteredDatabase()
+
+
+        
+            
+
+
