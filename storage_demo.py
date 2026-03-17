@@ -1,4 +1,6 @@
-from random import randint, choice, uniform, sample
+from random import seed, randint, choice, uniform, sample
+
+seed(1)
 
 # Student table definition
 class Student:
@@ -238,15 +240,6 @@ def sequential_list_sequential_search(start=1, end=5, verbose=False):
     verbose and print(f"? Found records:\n- {'\n- '.join(str(i) for i in records)}")
     print(f"! Found records after {total_lookup_count} lookups")
 
-# Heap file and sequential file demo run
-print("---Heap File---")
-student_heap_insert(verbose=True)
-student_heap_random_search(verbose=True)
-student_heap_sequential_search(verbose=True)
-print("---Sequential File---")
-sequential_list_insert(verbose=True)
-sequential_list_random_search(verbose=True)
-sequential_list_sequential_search(verbose=True)
 
 
 
@@ -351,10 +344,7 @@ def standard_database_search(verbose=False):
     records, lookup_count = standard_database.search("enrollments", "semester", "20231")
     verbose and print(f"? Found records:\n- {'\n- '.join([str(i) for i in records])}")
     print(f"! Found records after {lookup_count} lookups")
-print("--- Standard Database ---")
-standard_database_insert(verbose=True)
-standard_database_join(verbose=True)        
-standard_database_search(verbose=True)
+
 
 
 # Clustered database with table Student and Enrollment by student_id
@@ -478,10 +468,7 @@ def clustered_database_join(verbose=False):
             for i in value:
                 print(f"  - {str(i)}")
     print(f"! Finish joining students and enrollments table after {lookup_count} lookup")
-clustered_database_insert(verbose=True)
-clustered_database_search(verbose=True)
-clustered_database_key_search(verbose=True)
-clustered_database_join(verbose=True)
+
             
 # Partitioned database with Student partitioned by class name, Enrollment partitioned by semester
 class PartitionedDatabase:
@@ -648,9 +635,62 @@ def partitioned_database_join_demo(verbose=True):
             
     print(f"! Finish joining after {lookup_count} lookups")
 
-# --- Execution ---
-partitioned_database_insert_demo(verbose=True)
-partitioned_database_search_by_semester("20231", verbose=True)
-partitioned_database_search_by_student_id(10, verbose=True)
-partitioned_database_join_demo(verbose=True)
 
+
+# =================================================================
+# EXECUTION DEMO: COMPARING STORAGE STRATEGIES
+# =================================================================
+
+# --- PART 1: HEAP vs. SEQUENTIAL FILE ---
+print("\n" + "="*60)
+print("PHASE 1: FILE ORGANIZATION PERFORMANCE")
+print("="*60)
+
+# 1. Insertion Battle
+student_heap_insert(verbose=False)
+sequential_list_insert(verbose=False)
+
+# 2. Random Search Battle (Searching for 5 random students)
+student_heap_random_search(count=5, verbose=False)
+sequential_list_random_search(count=5, verbose=False)
+
+# 3. Range/Sequential Search Battle (IDs 5 to 10)
+# Sequential file will be much faster here as it doesn't re-scan for every ID
+student_heap_sequential_search(start=5, end=10, verbose=False)
+sequential_list_sequential_search(start=5, end=10, verbose=False)
+
+
+# --- PART 2: STANDARD vs. CLUSTERED DATABASE ---
+print("\n" + "="*60)
+print("PHASE 2: CLUSTERING & LOCALITY")
+print("="*60)
+
+# 1. Standard DB Join (Linear scan across two tables)
+standard_database_insert(verbose=False)
+standard_database_join(verbose=False)
+
+# 2. Clustered DB Join (Data is pre-grouped by student_id)
+# Notice the lookup count difference in your logic!
+clustered_database_insert(verbose=False)
+clustered_database_join(verbose=False)
+
+
+# --- PART 3: PARTITIONING SEARCH OPTIMIZATION ---
+print("\n" + "="*60)
+print("PHASE 3: PARTITION PRUNING vs. FULL SCAN")
+print("="*60)
+
+# 1. Insert into Partitioned DB (Students by Class, Enrollments by Semester)
+partitioned_database_insert_demo(verbose=False)
+
+# 2. The Partition "Win": Search by Semester (The Partition Key)
+# The database jumps directly to the '20231' list.
+partitioned_database_search_by_semester(semester="20231", verbose=True)
+
+# 3. The Partition "Loss": Search by Student ID (Non-Partition Key)
+# The database must scan every class partition to find the student.
+partitioned_database_search_by_student_id(sid=10, verbose=True)
+
+print("\n" + "="*60)
+print("DEMO COMPLETE")
+print("="*60)
