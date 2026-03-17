@@ -79,7 +79,7 @@ def print_record():
         print(enrollment)
 
 init()
-# print_record()
+print_record()
 
 
 
@@ -239,14 +239,14 @@ def sequential_list_sequential_search(start=1, end=5, verbose=False):
     print(f"! Found records after {total_lookup_count} lookups")
 
 # Heap file and sequential file demo run
-# print("---Heap File---")
-# student_heap_insert(verbose=True)
-# student_heap_random_search(verbose=True)
-# student_heap_sequential_search(verbose=True)
-# print("---Sequential File---")
-# sequential_list_insert(verbose=True)
-# sequential_list_random_search(verbose=True)
-# sequential_list_sequential_search(verbose=True)
+print("---Heap File---")
+student_heap_insert(verbose=True)
+student_heap_random_search(verbose=True)
+student_heap_sequential_search(verbose=True)
+print("---Sequential File---")
+sequential_list_insert(verbose=True)
+sequential_list_random_search(verbose=True)
+sequential_list_sequential_search(verbose=True)
 
 
 
@@ -260,6 +260,10 @@ class StandardDatabase:
             "students": [],
             "enrollments": []
         }
+        self.tables = {
+            "students": Student,
+            "enrollments": Enrollment
+        }
     def insert(self, table, record):
         if table not in self.database.keys():
             raise ValueError("Invalid table!")
@@ -269,7 +273,6 @@ class StandardDatabase:
     def search(self, table, key, value):
         if table not in self.database.keys():
             raise ValueError("Invalid table!")
-        
         if not hasattr(self.database[table][0], key):
             raise ValueError("Invalid key!")
         lookup_count = 0
@@ -298,6 +301,7 @@ class StandardDatabase:
             '__init__': joinInit,
             '__str__': joinStr
         })
+        self.tables[tableName] = joinClass
         # Helper dictionary to build joined tables
         results = []
         lookup_count = 0
@@ -365,7 +369,7 @@ class ClusteredDatabase:
     def insert(self, table, record):
         if table not in self.tables.keys():
             raise ValueError(f"Invalid table!")
-        if not isinstance(self.tables[table], record):
+        if not isinstance(record, self.tables[table]):
             raise ValueError(f"Invalid record for table {table}!")
         if not hasattr(record, 'student_id'):
             raise ValueError(f"Record doesn't have student_id column!")
@@ -378,7 +382,7 @@ class ClusteredDatabase:
     def search(self, table, key, value):
         if table not in self.tables.keys():
             raise ValueError(f"Invalid table!")
-        if not hasattr(self.tables[table], key):
+        if key not in self.tables[table].__static_attributes__:
             raise ValueError(f"Invalid key!")
         lookup_count = 0
         records = []
@@ -398,13 +402,14 @@ class ClusteredDatabase:
     def join(self, t1, t2, key, tableName=""):
         if t1 not in self.tables.keys() or t2 not in self.tables.keys():
             raise ValueError("Invalid tables!")
-        if not hasattr(self.tables[t1], key) or not hasattr(self.tables[t2], key):
+        if key not in self.tables[t1].__static_attributes__ \
+        or key not in self.tables[t2].__static_attributes__:
             raise ValueError("Invalid key!")
         tableName = t1 + "_" + t2 if tableName == '' else tableName
 
         # Create class for joined table
         def joinInit(self, **kwargs):
-            for key, value in kwargs.values():
+            for key, value in kwargs.items():
                 setattr(self, key, value)
         def joinStr(self):
             return f"[{str.upper(tableName)}|{'|'.join([str(i) for i in self.__dict__.values()])}]"
@@ -413,24 +418,239 @@ class ClusteredDatabase:
             '__init__': joinInit,
             '__str__': joinStr
         })
+        self.tables[tableName] = joinClass
         lookup_count = 0
         if key == 'student_id':
             parent = None
             for i in self.database.keys():
+                newRecords = []
+                lookup_count += 1
                 for j in self.database[i]:
-                    lookup_count += 1
                     if isinstance(j, self.tables[t1]):
                         parent = j
                     elif isinstance(j, self.tables[t2]):
-                        self.database[i].append(joinClass(**{**parent.__dict__, **j.__dict__}))
+                        newRecords.append(joinClass(**{**parent.__dict__, **j.__dict__}))
+                self.database[i].extend(newRecords)
         else:
             # Same as standard database, then put all the results into the database by student_id
             pass
+        return lookup_count
     
 clustered_database = ClusteredDatabase()
 
+def clustered_database_insert(verbose=False):
+    print("\n[CLUSTERED DATABASE INSERT]\n")
+    print("# Inserting randomized students and enrollments into the database")
+    for i in random_students:
+        clustered_database.insert("students", i)
+    for i in random_enrollments:
+        clustered_database.insert("enrollments", i)
+    if verbose:
+        print("? Clustered database structure:")
+        for key, value in clustered_database.database.items():
+            print(f"- student_id = {key}:")
+            for i in value:
+                print(f"  - {str(i)}")
 
-        
+def clustered_database_search(verbose=False):
+    print("\n[CLUSTERED DATABASE SEARCH]\n")
+    print("# Searching for enrollments in 20231 semester")
+    records, lookup_count = clustered_database.search("enrollments", "semester", "20231")
+    verbose and print(f"? Found records:\n- {'\n- '.join([str(i) for i in records])}")
+    print(f"! Found records after {lookup_count} lookups")
+
+def clustered_database_key_search(verbose=False):
+    print("\n[CLUSTERED DATABASE SEARCH WITH JOIN KEY]\n")
+    print("# Searching for students with id 10")
+    records, lookup_count = clustered_database.search("students", "student_id", 10)
+    verbose and print(f"? Found records:\n- {'\n- '.join([str(i) for i in records])}")
+    print(f"! Found records after {lookup_count} lookups")
+
+
+def clustered_database_join(verbose=False):
+    print("\n[CLUSTERED DATABASE JOIN]\n")
+    print("# Joining database students and enrollments into studentEnroll table")
+    lookup_count = clustered_database.join("students", "enrollments", "student_id", "studentEnroll")
+    if verbose:
+        print("? New database structure:")
+        for key, value in clustered_database.database.items():
+            print(f"- student_id = {key}:")
+            for i in value:
+                print(f"  - {str(i)}")
+    print(f"! Finish joining students and enrollments table after {lookup_count} lookup")
+clustered_database_insert(verbose=True)
+clustered_database_search(verbose=True)
+clustered_database_key_search(verbose=True)
+clustered_database_join(verbose=True)
             
+# Partitioned database with Student partitioned by class name, Enrollment partitioned by semester
+class PartitionedDatabase:
+    def __init__(self):
+        self.database = {
+            "students": {},
+            "enrollments": {}
+        }
+        self.tables = {
+            "students": Student,
+            "enrollments": Enrollment
+        }
+    
+    def insert(self, table, record):
+        if table not in self.database.keys():
+            raise ValueError("Invalid table!")
+        if not isinstance(record, self.tables[table]):
+            raise ValueError(f"Invalid record for table {table}!")
+        if table == "students":
+            # Partition by class_name
+            if record.class_name not in self.database["students"].keys():
+                self.database["students"][record.class_name] = [record]
+            else:
+                self.database["students"][record.class_name].append(record)
+        elif table == "enrollments":
+            # Partition by semester
+            if record.semester not in self.database["enrollments"].keys():
+                self.database["enrollments"][record.semester] = [record]
+            else:
+                self.database["enrollments"][record.semester].append(record)
+    
+    def search(self, table, key, value):
+        if table not in self.tables.keys():
+            raise ValueError(f"Invalid table!")
+        if key not in self.tables[table].__static_attributes__:
+            raise ValueError(f"Invalid key!")
+        
+        lookup_count = 0
+        records = []
 
+        if table == "students" and key == "class_name" or table == "enrollments" and key == "semester":
+            records = self.database[table][value]
+        else:
+            for i in self.database[table].values():
+                for j in i:
+                    lookup_count += 1
+                    if getattr(j, key) == value:
+                        records.append(j)
+        
+        return (records, lookup_count)
+    
+    def join(self, t1, t2, key, tableName=""):
+        if t1 not in self.database.keys() or t2 not in self.database.keys():
+            raise ValueError("Invalid tables!")
+        if key not in self.tables[t1].__static_attributes__ or key not in self.tables[t2].__static_attributes__:
+            raise ValueError("Invalid key!")
+        
+        tableName = t1 + "_" + t2 if tableName == "" else tableName
+        # Initiate tableName class
+        def joinInit(self, **kwargs):
+            for key, value in kwargs.items():
+                setattr(self, key, value)
+        def joinStr(self):
+            return f"[{str.upper(tableName)}|{'|'.join([str(i) for i in self.__dict__.values()])}]"
+        
+        joinClass = type(tableName, (object,), {
+            '__init__': joinInit,
+            '__str__': joinStr
+        })
+        self.tables[tableName] = joinClass
+
+        # Helper dictionary to build joined tables
+        results = []
+        lookup_count = 0
+        helper = {}
+        if t1 == "students" and key == "class_name":
+            for key, value in self.database[t1].items():
+                helper[key] = self.database[t1][key]
+        else:
+            for i in self.database[t1].values():
+                for j in i:
+                    lookup_count += 1
+                    helper[getattr(j, key)] = j
+        if t2 == "enrollments" and key == "semester":
+            for key, value in self.database[t2].items():
+                match = helper[key]
+                if match:
+                    for i in value:
+                        results.append(joinClass(**{**match.__dict__, **i.__dict__}))
+        else:
+            for i in self.database[t2].values():
+                for j in i:
+                    lookup_count += 1
+                    match = helper.get(getattr(j, key))
+                    if match:
+                        results.append(joinClass(**{**match.__dict__, **j.__dict__}))
+        self.database[tableName] = results
+        return lookup_count
+    
+partitioned_database = PartitionedDatabase()
+
+# --- Partitioned Database Demo Functions ---
+
+def partitioned_database_insert_demo(verbose=True):
+    print("\n[PARTITIONED DATABASE INSERT]\n")
+    print("# Inserting randomized students (by class) and enrollments (by semester)")
+    for s in random_students:
+        partitioned_database.insert("students", s)
+    for e in random_enrollments:
+        partitioned_database.insert("enrollments", e)
+    
+    if verbose:
+        print("? Partitioned Database Structure:")
+        print("--- Students (Partitioned by class_name) ---")
+        for class_key, s_list in partitioned_database.database["students"].items():
+            print(f"Partition [{class_key}]:")
+            for s in s_list:
+                print(f"  - {s}")
+        
+        print("\n--- Enrollments (Partitioned by semester) ---")
+        for sem_key, e_list in partitioned_database.database["enrollments"].items():
+            print(f"Partition [{sem_key}]:")
+            for e in e_list:
+                print(f"  - {e}")
+
+def partitioned_database_search_by_semester(semester="20231", verbose=False):
+    print(f"\n[PARTITIONED SEARCH BY SEMESTER: {semester}]\n")
+    print(f"# Querying partition key: {semester}")
+    verbose and print("! VERBOSE OUTPUT")
+    
+    # Direct access to the dictionary key
+    records, lookup_count = partitioned_database.search("enrollments", "semester", semester)
+    
+    if verbose:
+        print(f"? Found records:")
+        for r in records: print(f"  - {str(r)}")
+    
+    print(f"! Found {len(records)} records after {lookup_count} lookup(s)")
+
+def partitioned_database_search_by_student_id(sid=10, verbose=False):
+    print(f"\n[PARTITIONED SEARCH BY STUDENT_ID: {sid}]\n")
+    print(f"# Querying non-partition key: {sid}")
+    verbose and print("! VERBOSE OUTPUT")
+    
+    records, lookup_count = partitioned_database.search("students", "student_id", sid)
+    
+    if verbose:
+        print(f"? Found records:")
+        for r in records: print(f"  - {str(r)}")
+        
+    print(f"! Found {len(records)} record(s) after {lookup_count} lookup(s)")
+
+def partitioned_database_join_demo(verbose=True):
+    print("\n[PARTITIONED DATABASE JOIN]\n")
+    print("# Joining Students and Enrollments by student_id")
+    verbose and print("! VERBOSE OUTPUT")
+    
+    lookup_count = partitioned_database.join("students", "enrollments", "student_id", "studentEnroll")
+    
+    if verbose:
+        print("--- studentEnroll Joined Table Content ---")
+        for row in partitioned_database.database["studentEnroll"]:
+            print(f"- {row}")
+            
+    print(f"! Finish joining after {lookup_count} lookups")
+
+# --- Execution ---
+partitioned_database_insert_demo(verbose=True)
+partitioned_database_search_by_semester("20231", verbose=True)
+partitioned_database_search_by_student_id(10, verbose=True)
+partitioned_database_join_demo(verbose=True)
 
