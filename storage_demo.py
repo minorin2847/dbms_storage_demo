@@ -1,4 +1,4 @@
-from random import seed, randint, choice, uniform, sample
+from random import seed, randint, choice, sample
 
 seed(1)
 
@@ -24,7 +24,6 @@ class Course:
     def __str__(self):
         return f"[COURSE|{self.course_id}|{self.course_name}|{self.credits}|{self.dept_name}]"
 
-
 # Enrollment table definition
 class Enrollment:
     def __init__(self, student_id, course_id, semester, score):
@@ -38,8 +37,13 @@ class Enrollment:
 students = []
 courses = []
 enrollments = []
+
 # Initialize records
 def init():
+    global students, courses, enrollments
+    students = []
+    courses = []
+    enrollments = []
     # Randomize students
     for i in range(1, 21):
         classes = [f"C10{i}" for i in range(1, 6)]
@@ -47,7 +51,6 @@ def init():
         students.append(student)
 
     # List courses
-    global courses
     courses = [
         Course(1, "Giai tich 1", 3, "Co ban"),
         Course(2, "Giai tich 2", 3, "Co ban"),
@@ -57,7 +60,7 @@ def init():
         Course(6, "Nhap mon tri tue nhan tao", 3, "Tri tue nhan tao"),
         Course(7, "Vat ly ung dung", 4, "Co ban"),
         Course(8, "Thuc tap co so", 4, "CNTT1")
-            ]
+    ]
     # Randomize enrollment
     for i in range(30):
         student = choice(students)
@@ -65,7 +68,7 @@ def init():
         year = ["2023", "2024"]
         semester = ["1", "2"]
         enrollments.append(Enrollment(student.student_id, course.course_id, choice(year)+choice(semester), f"{randint(0, 100)/10:.1f}"))
-# Print records
+
 def print_record():
     print("---Students---")
     print("student_id|full_name|class_name|email|phone")
@@ -81,13 +84,13 @@ def print_record():
         print(enrollment)
 
 init()
-print_record()
+random_students = sample(students, k=len(students))
+random_enrollments = sample(enrollments, k=len(enrollments))
 
-
-
+# =================================================================
 # I. Heap file vs Sequential file
+# =================================================================
 
-# Heap file implementation for student
 class StudentHeapFile:
     def __init__(self):
         self.heap = []
@@ -110,11 +113,7 @@ class StudentHeapFile:
             total_lookup_count += lookup_count
             records.append(record)
         return (total_lookup_count, records)
-    def print(self):
-        for record in self.heap:
-            print(record)
 
-# Sequential file implementation for student
 class StudentSequentialFile:
     def __init__(self):
         self.list = []
@@ -160,114 +159,17 @@ class StudentSequentialFile:
         records = self.list[index:index+end-start+1]
         return (lookup_count, records)
 
-
-# Randomize student records for insertion
-random_students = sample(students, k=len(students))
-
-# Demo for student heap file
-heapFile = StudentHeapFile()
-def student_heap_insert(verbose=False):
-    print("\n[HEAP FILE INSERT]\n")
-    print("# Insert randomized student records into heap file")
-    verbose and print("! VERBOSE OUTPUT")
-    total_lookup_count = 0
-    for student in random_students:
-        lookup_count =  heapFile.insert(student)
-        verbose and print(f"? Insert record {student} after {lookup_count} lookups")
-        total_lookup_count += lookup_count
-    if verbose:
-        print("? Heap file content:")
-        for student in heapFile.heap:
-            print("- " + str(student))
-    print(f"! Finish inserting into heap after {total_lookup_count} lookups")
-def student_heap_random_search(count=5, verbose=False):
-    print("\n[HEAP RANDOM SEARCH]\n")
-    print(f"# Search for {count} random students:")
-    verbose and print("! VERBOSE OUTPUT")
-    random_search_id = sample(range(1, 21), k=count)
-    total_lookup_count = 0
-    records = []
-    for i in random_search_id:
-        record, lookup_count = heapFile.random_search(i)
-        verbose and print(f"? Found record {record} after {lookup_count} lookups")
-        total_lookup_count += lookup_count
-        records.append(record)
-    verbose and print(f"? Found records:\n- {'\n- '.join(str(i) for i in records)}")
-    print(f"! Finish search after {total_lookup_count} lookups")
-def student_heap_sequential_search(start=1, end=5, verbose=False):
-    print("\n[HEAP SEQUENTIAL SEARCH]\n")
-    print(f"# Search for students with id from {start} to {end}")
-    verbose and print("! VERBOSE OUTPUT")
-    total_lookup_count, records = heapFile.sequential_search(start, end)
-    verbose and print(f"? Found records:\n- {'\n- '.join(str(i) for i in records)}")
-    print(f"! Finish search after {total_lookup_count} lookups")
-
-# Demo for student sequential file
-sequentialFile = StudentSequentialFile()
-def sequential_list_insert(verbose=False):
-    print("\n[SEQUENTIAL FILE INSERT]\n")
-    print("# Inserting random student records into sequential file")
-    verbose and print("! VERBOSE OUTPUT")
-    total_lookup_count = 0
-    for student in random_students:
-        lookup_count = sequentialFile.insert(student)
-        verbose and print(f"? Insert record {student} after {lookup_count} lookups")
-        total_lookup_count += lookup_count
-    if verbose:
-        print("? Sequential file content:")
-        for student in sequentialFile.list:
-            print("- " + str(student))
-    print(f"! Finish inserting after {total_lookup_count} lookups")
-def sequential_list_random_search(count=5, verbose=False):
-    print("\n[SEQUENTIAL FILE RANDOM SEARCH]\n")
-    print(f"# Search for {count} random students:")
-    verbose and print("! VERBOSE OUTPUT")
-    random_search_id = sample(range(1, 21), k=count)
-    total_lookup_count = 0
-    records = []
-    for i in random_search_id:
-        record, index, lookup_count = sequentialFile.random_search(i)
-        verbose and print(f"? Found record {record} at index {index} after {lookup_count} lookups")
-        total_lookup_count += lookup_count
-        records.append(record)
-    verbose and print(f"? Found records:\n- {'\n- '.join(str(i) for i in records)}")
-    print(f"! Found records after {total_lookup_count} lookups")
-def sequential_list_sequential_search(start=1, end=5, verbose=False):
-    print("\n[SEQUENTIAL FILE SEQUENTIAL SEARCH]\n")
-    print(f"# Search for students with id from {start} to {end}")
-    verbose and print("! VERBOSE OUTPUT")
-    total_lookup_count, records = sequentialFile.sequential_search(start, end)
-    verbose and print(f"? Found records:\n- {'\n- '.join(str(i) for i in records)}")
-    print(f"! Found records after {total_lookup_count} lookups")
-
-
-
-
-
+# =================================================================
 # II. Multitable Clustering and Partitioning 
+# =================================================================
 
-# Standard database with seperate Student and Enrollment tables using a heap file
 class StandardDatabase:
     def __init__(self):
-        self.database = {
-            "students": [],
-            "enrollments": []
-        }
-        self.tables = {
-            "students": Student,
-            "enrollments": Enrollment
-        }
+        self.database = {"students": [], "enrollments": []}
+        self.tables = {"students": Student, "enrollments": Enrollment}
     def insert(self, table, record):
-        if table not in self.database.keys():
-            raise ValueError("Invalid table!")
-        
         self.database[table].append(record)
-    
     def search(self, table, key, value):
-        if table not in self.database.keys():
-            raise ValueError("Invalid table!")
-        if not hasattr(self.database[table][0], key):
-            raise ValueError("Invalid key!")
         lookup_count = 0
         records = []
         for i in self.database[table]:
@@ -275,112 +177,44 @@ class StandardDatabase:
             if getattr(i, key) == value:
                 records.append(i)
         return (records, lookup_count)
-    
     def join(self, t1, t2, key, tableName=""):
-        if t1 not in self.database.keys() or t2 not in self.database.keys():
-            raise ValueError("Invalid tables!")
-        if not hasattr(self.database[t1][0], key) or not hasattr(self.database[t2][0], key):
-            raise ValueError("Invalid key!")
-        
         tableName = t1 + "_" + t2 if tableName == "" else tableName
-        # Initiate tableName class
         def joinInit(self, **kwargs):
-            for key, value in kwargs.items():
-                setattr(self, key, value)
+            for k, v in kwargs.items(): setattr(self, k, v)
         def joinStr(self):
             return f"[{str.upper(tableName)}|{'|'.join([str(i) for i in self.__dict__.values()])}]"
-        
-        joinClass = type(tableName, (object,), {
-            '__init__': joinInit,
-            '__str__': joinStr
-        })
+        joinClass = type(tableName, (object,), {'__init__': joinInit, '__str__': joinStr})
         self.tables[tableName] = joinClass
-        # Helper dictionary to build joined tables
         results = []
         lookup_count = 0
         helper = {}
         for i in self.database[t1]:
             lookup_count += 1
             helper[getattr(i, key)] = i
-        
         for i in self.database[t2]:
             lookup_count += 1
             match = helper.get(getattr(i, key))
             if match:
                 results.append(joinClass(**{**match.__dict__, **i.__dict__}))
-        
         self.database[tableName] = results
         return lookup_count
-    
 
-
-standard_database = StandardDatabase()
-random_enrollments = sample(enrollments, k=len(enrollments))
-
-def standard_database_insert(verbose=False):
-    print("\n[STANDARD DATABASE INSERT]\n")
-    print("# Inserting randomized students and enrollments into the database")
-    for i in random_students:
-        standard_database.insert("students", i)
-    for i in random_enrollments:
-        standard_database.insert("enrollments", i)
-    if verbose:
-        print("? Standard database structure:")
-        print(f"? Students:\n- {'\n- '.join([str(i) for i in standard_database.database['students']])}")
-        print(f"? Enrollments:\n- {'\n- '.join([str(i) for i in standard_database.database['enrollments']])}")
-
-
-def standard_database_join(verbose=False):
-    print("\n[STANDARD DATABASE JOIN]\n")
-    print("# Joining database students and enrollments into studentEnroll table")
-    lookup_count = standard_database.join("students", "enrollments", "student_id", "studentEnroll")
-    if verbose:
-        print(f"? New table structure:\n- {'\n- '.join([str(i) for i in standard_database.database['studentEnroll']])}")
-    print(f"! Finish joining students and enrollments table after {lookup_count} lookup")
-
-def standard_database_search(verbose=False):
-    print("\n[STANDARD DATABASE SEARCH]\n")
-    print("# Searching for enrollments in 20231 semester")
-    records, lookup_count = standard_database.search("enrollments", "semester", "20231")
-    verbose and print(f"? Found records:\n- {'\n- '.join([str(i) for i in records])}")
-    print(f"! Found records after {lookup_count} lookups")
-
-
-
-# Clustered database with table Student and Enrollment by student_id
 class ClusteredDatabase:
     def __init__(self):
         self.database = {}
-        self.tables = {
-            "students": Student,
-            "enrollments": Enrollment
-        }
-    
+        self.tables = {"students": Student, "enrollments": Enrollment}
     def insert(self, table, record):
-        if table not in self.tables.keys():
-            raise ValueError(f"Invalid table!")
-        if not isinstance(record, self.tables[table]):
-            raise ValueError(f"Invalid record for table {table}!")
-        if not hasattr(record, 'student_id'):
-            raise ValueError(f"Record doesn't have student_id column!")
-        
         if getattr(record, 'student_id') not in self.database:
             self.database[getattr(record, 'student_id')] = [record]
         else:
             self.database[getattr(record, 'student_id')].append(record)
-    
     def search(self, table, key, value):
-        if table not in self.tables.keys():
-            raise ValueError(f"Invalid table!")
-        if key not in self.tables[table].__static_attributes__:
-            raise ValueError(f"Invalid key!")
         lookup_count = 0
         records = []
         if key == 'student_id':
-            for i in self.database[value]:
+            for i in self.database.get(value, []):
                 lookup_count += 1
-                if isinstance(i, self.tables[table]):
-                    records.append(i)
+                if isinstance(i, self.tables[table]): records.append(i)
         else:
             for i in self.database.values():
                 for j in i:
@@ -388,309 +222,355 @@ class ClusteredDatabase:
                     if isinstance(j, self.tables[table]) and getattr(j, key) == value:
                         records.append(j)
         return (records, lookup_count)
-
     def join(self, t1, t2, key, tableName=""):
-        if t1 not in self.tables.keys() or t2 not in self.tables.keys():
-            raise ValueError("Invalid tables!")
-        if key not in self.tables[t1].__static_attributes__ \
-        or key not in self.tables[t2].__static_attributes__:
-            raise ValueError("Invalid key!")
         tableName = t1 + "_" + t2 if tableName == '' else tableName
-
-        # Create class for joined table
         def joinInit(self, **kwargs):
-            for key, value in kwargs.items():
-                setattr(self, key, value)
+            for k, v in kwargs.items(): setattr(self, k, v)
         def joinStr(self):
             return f"[{str.upper(tableName)}|{'|'.join([str(i) for i in self.__dict__.values()])}]"
-        
-        joinClass = type(tableName, (object,), {
-            '__init__': joinInit,
-            '__str__': joinStr
-        })
+        joinClass = type(tableName, (object,), {'__init__': joinInit, '__str__': joinStr})
         self.tables[tableName] = joinClass
         lookup_count = 0
         if key == 'student_id':
-            parent = None
             for i in self.database.keys():
                 newRecords = []
                 lookup_count += 1
+                parent = None
                 for j in self.database[i]:
-                    if isinstance(j, self.tables[t1]):
-                        parent = j
-                    elif isinstance(j, self.tables[t2]):
+                    if isinstance(j, self.tables[t1]): parent = j
+                    elif isinstance(j, self.tables[t2]) and parent:
                         newRecords.append(joinClass(**{**parent.__dict__, **j.__dict__}))
                 self.database[i].extend(newRecords)
-        else:
-            # Same as standard database, then put all the results into the database by student_id
-            pass
         return lookup_count
-    
-clustered_database = ClusteredDatabase()
 
-def clustered_database_insert(verbose=False):
-    print("\n[CLUSTERED DATABASE INSERT]\n")
-    print("# Inserting randomized students and enrollments into the database")
-    for i in random_students:
-        clustered_database.insert("students", i)
-    for i in random_enrollments:
-        clustered_database.insert("enrollments", i)
-    if verbose:
-        print("? Clustered database structure:")
-        for key, value in clustered_database.database.items():
-            print(f"- student_id = {key}:")
-            for i in value:
-                print(f"  - {str(i)}")
-
-def clustered_database_search(verbose=False):
-    print("\n[CLUSTERED DATABASE SEARCH]\n")
-    print("# Searching for enrollments in 20231 semester")
-    records, lookup_count = clustered_database.search("enrollments", "semester", "20231")
-    verbose and print(f"? Found records:\n- {'\n- '.join([str(i) for i in records])}")
-    print(f"! Found records after {lookup_count} lookups")
-
-def clustered_database_key_search(verbose=False):
-    print("\n[CLUSTERED DATABASE SEARCH WITH JOIN KEY]\n")
-    print("# Searching for students with id 10")
-    records, lookup_count = clustered_database.search("students", "student_id", 10)
-    verbose and print(f"? Found records:\n- {'\n- '.join([str(i) for i in records])}")
-    print(f"! Found records after {lookup_count} lookups")
-
-
-def clustered_database_join(verbose=False):
-    print("\n[CLUSTERED DATABASE JOIN]\n")
-    print("# Joining database students and enrollments into studentEnroll table")
-    lookup_count = clustered_database.join("students", "enrollments", "student_id", "studentEnroll")
-    if verbose:
-        print("? New database structure:")
-        for key, value in clustered_database.database.items():
-            print(f"- student_id = {key}:")
-            for i in value:
-                print(f"  - {str(i)}")
-    print(f"! Finish joining students and enrollments table after {lookup_count} lookup")
-
-            
-# Partitioned database with Student partitioned by class name, Enrollment partitioned by semester
 class PartitionedDatabase:
     def __init__(self):
-        self.database = {
-            "students": {},
-            "enrollments": {}
-        }
-        self.tables = {
-            "students": Student,
-            "enrollments": Enrollment
-        }
-    
+        self.database = {"students": {}, "enrollments": {}}
+        self.tables = {"students": Student, "enrollments": Enrollment}
     def insert(self, table, record):
-        if table not in self.database.keys():
-            raise ValueError("Invalid table!")
-        if not isinstance(record, self.tables[table]):
-            raise ValueError(f"Invalid record for table {table}!")
         if table == "students":
-            # Partition by class_name
-            if record.class_name not in self.database["students"].keys():
-                self.database["students"][record.class_name] = [record]
-            else:
-                self.database["students"][record.class_name].append(record)
+            if record.class_name not in self.database["students"]: self.database["students"][record.class_name] = [record]
+            else: self.database["students"][record.class_name].append(record)
         elif table == "enrollments":
-            # Partition by semester
-            if record.semester not in self.database["enrollments"].keys():
-                self.database["enrollments"][record.semester] = [record]
-            else:
-                self.database["enrollments"][record.semester].append(record)
-    
+            if record.semester not in self.database["enrollments"]: self.database["enrollments"][record.semester] = [record]
+            else: self.database["enrollments"][record.semester].append(record)
     def search(self, table, key, value):
-        if table not in self.tables.keys():
-            raise ValueError(f"Invalid table!")
-        if key not in self.tables[table].__static_attributes__:
-            raise ValueError(f"Invalid key!")
-        
         lookup_count = 0
         records = []
-
-        if table == "students" and key == "class_name" or table == "enrollments" and key == "semester":
-            records = self.database[table][value]
+        if (table == "students" and key == "class_name") or (table == "enrollments" and key == "semester"):
+            records = self.database[table].get(value, [])
         else:
             for i in self.database[table].values():
                 for j in i:
                     lookup_count += 1
-                    if getattr(j, key) == value:
-                        records.append(j)
-        
+                    if getattr(j, key) == value: records.append(j)
         return (records, lookup_count)
-    
     def join(self, t1, t2, key, tableName=""):
-        if t1 not in self.database.keys() or t2 not in self.database.keys():
-            raise ValueError("Invalid tables!")
-        if key not in self.tables[t1].__static_attributes__ or key not in self.tables[t2].__static_attributes__:
-            raise ValueError("Invalid key!")
-        
         tableName = t1 + "_" + t2 if tableName == "" else tableName
-        # Initiate tableName class
         def joinInit(self, **kwargs):
-            for key, value in kwargs.items():
-                setattr(self, key, value)
+            for k, v in kwargs.items(): setattr(self, k, v)
         def joinStr(self):
             return f"[{str.upper(tableName)}|{'|'.join([str(i) for i in self.__dict__.values()])}]"
-        
-        joinClass = type(tableName, (object,), {
-            '__init__': joinInit,
-            '__str__': joinStr
-        })
+        joinClass = type(tableName, (object,), {'__init__': joinInit, '__str__': joinStr})
         self.tables[tableName] = joinClass
-
-        # Helper dictionary to build joined tables
         results = []
         lookup_count = 0
         helper = {}
         if t1 == "students" and key == "class_name":
-            for key, value in self.database[t1].items():
-                helper[key] = self.database[t1][key]
+            for k, v in self.database[t1].items(): helper[k] = v
         else:
             for i in self.database[t1].values():
                 for j in i:
                     lookup_count += 1
                     helper[getattr(j, key)] = j
         if t2 == "enrollments" and key == "semester":
-            for key, value in self.database[t2].items():
-                match = helper[key]
+            for k, v in self.database[t2].items():
+                match = helper.get(k)
                 if match:
-                    for i in value:
-                        results.append(joinClass(**{**match.__dict__, **i.__dict__}))
+                    for i in v: results.append(joinClass(**{**match.__dict__, **i.__dict__}))
         else:
             for i in self.database[t2].values():
                 for j in i:
                     lookup_count += 1
                     match = helper.get(getattr(j, key))
-                    if match:
-                        results.append(joinClass(**{**match.__dict__, **j.__dict__}))
+                    if match: results.append(joinClass(**{**match.__dict__, **j.__dict__}))
         self.database[tableName] = results
         return lookup_count
-    
-partitioned_database = PartitionedDatabase()
-
-# --- Partitioned Database Demo Functions ---
-
-def partitioned_database_insert_demo(verbose=True):
-    print("\n[PARTITIONED DATABASE INSERT]\n")
-    print("# Inserting randomized students (by class) and enrollments (by semester)")
-    for s in random_students:
-        partitioned_database.insert("students", s)
-    for e in random_enrollments:
-        partitioned_database.insert("enrollments", e)
-    
-    if verbose:
-        print("? Partitioned Database Structure:")
-        print("--- Students (Partitioned by class_name) ---")
-        for class_key, s_list in partitioned_database.database["students"].items():
-            print(f"Partition [{class_key}]:")
-            for s in s_list:
-                print(f"  - {s}")
-        
-        print("\n--- Enrollments (Partitioned by semester) ---")
-        for sem_key, e_list in partitioned_database.database["enrollments"].items():
-            print(f"Partition [{sem_key}]:")
-            for e in e_list:
-                print(f"  - {e}")
-
-def partitioned_database_search_by_semester(semester="20231", verbose=False):
-    print(f"\n[PARTITIONED SEARCH BY SEMESTER: {semester}]\n")
-    print(f"# Querying partition key: {semester}")
-    verbose and print("! VERBOSE OUTPUT")
-    
-    # Direct access to the dictionary key
-    records, lookup_count = partitioned_database.search("enrollments", "semester", semester)
-    
-    if verbose:
-        print(f"? Found records:")
-        for r in records: print(f"  - {str(r)}")
-    
-    print(f"! Found {len(records)} records after {lookup_count} lookup(s)")
-
-def partitioned_database_search_by_student_id(sid=10, verbose=False):
-    print(f"\n[PARTITIONED SEARCH BY STUDENT_ID: {sid}]\n")
-    print(f"# Querying non-partition key: {sid}")
-    verbose and print("! VERBOSE OUTPUT")
-    
-    records, lookup_count = partitioned_database.search("students", "student_id", sid)
-    
-    if verbose:
-        print(f"? Found records:")
-        for r in records: print(f"  - {str(r)}")
-        
-    print(f"! Found {len(records)} record(s) after {lookup_count} lookup(s)")
-
-def partitioned_database_join_demo(verbose=True):
-    print("\n[PARTITIONED DATABASE JOIN]\n")
-    print("# Joining Students and Enrollments by student_id")
-    verbose and print("! VERBOSE OUTPUT")
-    
-    lookup_count = partitioned_database.join("students", "enrollments", "student_id", "studentEnroll")
-    
-    if verbose:
-        print("--- studentEnroll Joined Table Content ---")
-        for row in partitioned_database.database["studentEnroll"]:
-            print(f"- {row}")
-            
-    print(f"! Finish joining after {lookup_count} lookups")
-
-
 
 # =================================================================
 # EXECUTION DEMO: COMPARING STORAGE STRATEGIES
 # =================================================================
 
-# --- PART 1: HEAP vs. SEQUENTIAL FILE ---
-print("\n" + "="*60)
-print("PHASE 1: FILE ORGANIZATION PERFORMANCE")
-print("="*60)
+def demo_phase_1(verbose=True):
+    print("\n" + "="*60)
+    print("PHASE 1: FILE ORGANIZATION PERFORMANCE (Heap vs Sequential)")
+    print("="*60)
+    heapFile = StudentHeapFile()
+    sequentialFile = StudentSequentialFile()
+    
+    # --- INSERT BATTLE ---
+    print("\n[HEAP FILE INSERT]")
+    print("# Insert randomized student records into heap file")
+    verbose and print("! VERBOSE OUTPUT")
+    total_hc = 0
+    for s in random_students:
+        hc = heapFile.insert(s)
+        verbose and print(f"? Insert record {s} after {hc} lookups")
+        total_hc += hc
+    if verbose:
+        print("? Heap file content:")
+        for s in heapFile.heap: print("- " + str(s))
+    print(f"! Finish inserting into heap after {total_hc} lookups")
+    
+    print("\n[SEQUENTIAL FILE INSERT]")
+    print("# Inserting random student records into sequential file")
+    verbose and print("! VERBOSE OUTPUT")
+    total_sc = 0
+    for s in random_students:
+        sc = sequentialFile.insert(s)
+        verbose and print(f"? Insert record {s} after {sc} lookups")
+        total_sc += sc
+    if verbose:
+        print("? Sequential file content:")
+        for s in sequentialFile.list: print("- " + str(s))
+    print(f"! Finish inserting into sequential after {total_sc} lookups")
 
-# 1. Insertion Battle
-student_heap_insert(verbose=False)
-sequential_list_insert(verbose=False)
+    # --- RANDOM SEARCH BATTLE ---
+    random_search_id = sample(range(1, 21), k=5)
+    
+    print(f"\n[HEAP RANDOM SEARCH]")
+    print(f"# Search for 5 random students: {random_search_id}")
+    verbose and print("! VERBOSE OUTPUT")
+    total_hc = 0
+    records_heap = []
+    for i in random_search_id:
+        record, hc = heapFile.random_search(i)
+        verbose and print(f"? Found record {record} after {hc} lookups")
+        total_hc += hc
+        records_heap.append(record)
+    verbose and print(f"? Found records:\n- {'\n- '.join(str(i) for i in records_heap)}")
+    print(f"! Finish heap search after {total_hc} lookups")
 
-# 2. Random Search Battle (Searching for 5 random students)
-student_heap_random_search(count=5, verbose=False)
-sequential_list_random_search(count=5, verbose=False)
+    print(f"\n[SEQUENTIAL FILE RANDOM SEARCH]")
+    print(f"# Search for 5 random students: {random_search_id}")
+    verbose and print("! VERBOSE OUTPUT")
+    total_sc = 0
+    records_seq = []
+    for i in random_search_id:
+        record, index, sc = sequentialFile.random_search(i)
+        verbose and print(f"? Found record {record} at index {index} after {sc} lookups")
+        total_sc += sc
+        if record: records_seq.append(record)
+    verbose and print(f"? Found records:\n- {'\n- '.join(str(i) for i in records_seq)}")
+    print(f"! Finish sequential search after {total_sc} lookups")
 
-# 3. Range/Sequential Search Battle (IDs 5 to 10)
-# Sequential file will be much faster here as it doesn't re-scan for every ID
-student_heap_sequential_search(start=5, end=10, verbose=False)
-sequential_list_sequential_search(start=5, end=10, verbose=False)
+    # --- SEQUENTIAL / RANGE SEARCH BATTLE ---
+    start, end = 5, 10
+    
+    print(f"\n[HEAP SEQUENTIAL SEARCH]")
+    print(f"# Search for students with id from {start} to {end}")
+    verbose and print("! VERBOSE OUTPUT")
+    hc, records_heap = heapFile.sequential_search(start, end)
+    verbose and print(f"? Found records:\n- {'\n- '.join(str(i) for i in records_heap)}")
+    print(f"! Finish heap search after {hc} lookups")
+
+    print(f"\n[SEQUENTIAL FILE SEQUENTIAL SEARCH]")
+    print(f"# Search for students with id from {start} to {end}")
+    verbose and print("! VERBOSE OUTPUT")
+    sc, records_seq = sequentialFile.sequential_search(start, end)
+    verbose and print(f"? Found records:\n- {'\n- '.join(str(i) for i in records_seq)}")
+    print(f"! Finish sequential search after {sc} lookups")
+
+def demo_phase_2(verbose=True):
+    print("\n" + "="*60)
+    print("PHASE 2: CLUSTERING & LOCALITY (Standard vs Clustered)")
+    print("="*60)
+    standard_db = StandardDatabase()
+    clustered_db = ClusteredDatabase()
+
+    # --- INSERT ---
+    print("\n[STANDARD DATABASE INSERT]")
+    print("# Inserting randomized students and enrollments into the database")
+    for s in random_students: standard_db.insert("students", s)
+    for e in random_enrollments: standard_db.insert("enrollments", e)
+    if verbose:
+        print("? Standard database structure:")
+        print(f"? Students:\n- {'\n- '.join([str(i) for i in standard_db.database['students']])}")
+        print(f"? Enrollments:\n- {'\n- '.join([str(i) for i in standard_db.database['enrollments']])}")
+
+    print("\n[CLUSTERED DATABASE INSERT]")
+    print("# Inserting randomized students and enrollments into the database")
+    for s in random_students: clustered_db.insert("students", s)
+    for e in random_enrollments: clustered_db.insert("enrollments", e)
+    if verbose:
+        print("? Clustered database structure:")
+        for key, value in clustered_db.database.items():
+            print(f"- student_id = {key}:")
+            for i in value: print(f"  - {str(i)}")
+
+    # --- JOIN ---
+    print("\n[STANDARD DATABASE JOIN]")
+    print("# Joining database students and enrollments into studentEnroll table")
+    sc = standard_db.join("students", "enrollments", "student_id", "studentEnroll")
+    if verbose:
+        print(f"? New table structure:\n- {'\n- '.join([str(i) for i in standard_db.database['studentEnroll']])}")
+    print(f"! Finish Standard join after {sc} lookups")
+
+    print("\n[CLUSTERED DATABASE JOIN]")
+    print("# Joining database students and enrollments into studentEnroll table")
+    cc = clustered_db.join("students", "enrollments", "student_id", "studentEnroll")
+    if verbose:
+        print("? New database structure:")
+        for key, value in clustered_db.database.items():
+            print(f"- student_id = {key}:")
+            for i in value: print(f"  - {str(i)}")
+    print(f"! Finish Clustered join after {cc} lookups")
+
+def demo_phase_3(verbose=True):
+    print("\n" + "="*60)
+    print("PHASE 3: PARTITION PRUNING vs FULL SCAN (Partitioned)")
+    print("="*60)
+    part_db = PartitionedDatabase()
+
+    print("\n[PARTITIONED DATABASE INSERT]")
+    print("# Inserting randomized students (by class) and enrollments (by semester)")
+    for s in random_students: part_db.insert("students", s)
+    for e in random_enrollments: part_db.insert("enrollments", e)
+    
+    if verbose:
+        print("? Partitioned Database Structure:")
+        print("--- Students (Partitioned by class_name) ---")
+        for class_key, s_list in part_db.database["students"].items():
+            print(f"Partition [{class_key}]:")
+            for s in s_list: print(f"  - {s}")
+        
+        print("\n--- Enrollments (Partitioned by semester) ---")
+        for sem_key, e_list in part_db.database["enrollments"].items():
+            print(f"Partition [{sem_key}]:")
+            for e in e_list: print(f"  - {e}")
+
+    print("\n[PARTITIONED SEARCH BY SEMESTER: 20231]")
+    print(f"# Querying partition key: 20231")
+    verbose and print("! VERBOSE OUTPUT")
+    records, lookup_count = part_db.search("enrollments", "semester", "20231")
+    if verbose:
+        print(f"? Found records:")
+        for r in records: print(f"  - {str(r)}")
+    print(f"! Found {len(records)} records after {lookup_count} lookup(s)")
+
+    print("\n[PARTITIONED SEARCH BY STUDENT_ID: 10]")
+    print(f"# Querying non-partition key: 10")
+    verbose and print("! VERBOSE OUTPUT")
+    records, lookup_count = part_db.search("students", "student_id", 10)
+    if verbose:
+        print(f"? Found records:")
+        for r in records: print(f"  - {str(r)}")
+    print(f"! Found {len(records)} record(s) after {lookup_count} lookup(s)")
+
+    print("\n[PARTITIONED DATABASE JOIN]")
+    print("# Joining Students and Enrollments by student_id")
+    verbose and print("! VERBOSE OUTPUT")
+    lookup_count = part_db.join("students", "enrollments", "student_id", "studentEnroll")
+    if verbose:
+        print("--- studentEnroll Joined Table Content ---")
+        for row in part_db.database["studentEnroll"]: print(f"- {row}")
+    print(f"! Finish joining after {lookup_count} lookups")
+
+def demo_phase_4(verbose=True):
+    print("\n" + "="*60)
+    print("PHASE 4: CLUSTERING VS PARTITIONING COMPARISON")
+    print("="*60)
+    
+    # Khởi tạo dữ liệu sạch cho demo
+    c_db = ClusteredDatabase()
+    p_db = PartitionedDatabase()
+    
+    print("\n[PREPARING DATA]")
+    for s in random_students:
+        c_db.insert("students", s)
+        p_db.insert("students", s)
+    for e in random_enrollments:
+        c_db.insert("enrollments", e)
+        p_db.insert("enrollments", e)
+    print("! Data loaded into both Clustered and Partitioned systems.")
+
+    # --- SCENARIO A: JOIN ---
+    print("\n[SCENARIO A: JOIN BATTLE (By student_id)]")
+    print("# Task: Join 'students' and 'enrollments' tables on 'student_id'")
+    verbose and print("! VERBOSE OUTPUT")
+
+    # Clustered Join
+    c_join_count = c_db.join("students", "enrollments", "student_id", "c_joined")
+    if verbose:
+        print("? Clustered DB Join Results (Sample):")
+        # In thử 3 dòng đầu tiên của kết quả join
+        sample_data = []
+        for v in c_db.database.values():
+            for item in v:
+                if "C_JOINED" in str(item): sample_data.append(item)
+        for row in sample_data[:3]: print(f"  - {row}")
+    print(f"! Clustered Join finished after {c_join_count} lookups")
+
+    # Partitioned Join
+    p_join_count = p_db.join("students", "enrollments", "student_id", "p_joined")
+    if verbose:
+        print("? Partitioned DB Join Results (Sample):")
+        for row in p_db.database["p_joined"][:3]: print(f"  - {row}")
+    print(f"! Partitioned Join finished after {p_join_count} lookups")
 
 
-# --- PART 2: STANDARD vs. CLUSTERED DATABASE ---
-print("\n" + "="*60)
-print("PHASE 2: CLUSTERING & LOCALITY")
-print("="*60)
+    print("\n" + "-"*30)
 
-# 1. Standard DB Join (Linear scan across two tables)
-standard_database_insert(verbose=False)
-standard_database_join(verbose=False)
+    # --- SCENARIO B: SEARCH ---
+    target_sem = "20231"
+    print(f"\n[SCENARIO B: SEARCH BATTLE (By semester '{target_sem}')]")
+    print(f"# Task: Find all enrollment records for semester {target_sem}")
+    verbose and print("! VERBOSE OUTPUT")
 
-# 2. Clustered DB Join (Data is pre-grouped by student_id)
-# Notice the lookup count difference in your logic!
-clustered_database_insert(verbose=False)
-clustered_database_join(verbose=False)
+    # Clustered Search
+    c_records, c_search_count = c_db.search("enrollments", "semester", target_sem)
+    if verbose:
+        print(f"? Clustered Search found {len(c_records)} records:")
+        for r in c_records[:3]: print(f"  - {r}")
+        print("  ... (full scan performed across all student buckets)")
+    print(f"! Clustered Search finished after {c_search_count} lookups")
+
+    # Partitioned Search
+    p_records, p_search_count = p_db.search("enrollments", "semester", target_sem)
+    if verbose:
+        print(f"? Partitioned Search found {len(p_records)} records:")
+        for r in p_records[:3]: print(f"  - {r}")
+        print(f"  ... (jumped directly to partition '{target_sem}')")
+    print(f"! Partitioned Search finished after {p_search_count} lookups")
 
 
-# --- PART 3: PARTITIONING SEARCH OPTIMIZATION ---
-print("\n" + "="*60)
-print("PHASE 3: PARTITION PRUNING vs. FULL SCAN")
-print("="*60)
+# --- CẬP NHẬT MENU CHÍNH ---
+def main_menu():
+    while True:
+        print("\n" + "*"*50)
+        print("Demo DBMS - Phân tích chiến lược lưu trữ")
+        print("*"*50)
+        print("1. Phase 1: Heap vs Sequential (File Org)")
+        print("2. Phase 2: Standard vs Clustered (Locality)")
+        print("3. Phase 3: Partitioning (Pruning Search)")
+        print("4. Phase 4: Clustering vs Partitioning (Comparison)")
+        print("Gõ 'q' để thoát")
+        
+        choice = input("\nChọn chức năng (1/2/3/4/q): ").strip().lower()
+        
+        if choice == '1':
+            demo_phase_1(verbose=True)
+        elif choice == '2':
+            demo_phase_2(verbose=True)
+        elif choice == '3':
+            demo_phase_3(verbose=True)
+        elif choice == '4':
+            demo_phase_4(verbose=True)
+        elif choice == 'q':
+            print("Đang thoát chương trình. Tạm biệt!")
+            break
+        else:
+            print("Lựa chọn không hợp lệ. Vui lòng thử lại.")
 
-# 1. Insert into Partitioned DB (Students by Class, Enrollments by Semester)
-partitioned_database_insert_demo(verbose=False)
-
-# 2. The Partition "Win": Search by Semester (The Partition Key)
-# The database jumps directly to the '20231' list.
-partitioned_database_search_by_semester(semester="20231", verbose=True)
-
-# 3. The Partition "Loss": Search by Student ID (Non-Partition Key)
-# The database must scan every class partition to find the student.
-partitioned_database_search_by_student_id(sid=10, verbose=True)
-
-print("\n" + "="*60)
-print("DEMO COMPLETE")
-print("="*60)
+if __name__ == "__main__":
+    main_menu()
